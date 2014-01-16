@@ -8,6 +8,8 @@ import re
 import unicodedata
 from unistego.exceptions import StegoError, ErrorIncompleteMessage
 from unistego.utils import is_word_char
+import random
+import six
 
 
 class HidingStrategy():
@@ -65,8 +67,10 @@ class UnhidingStrategy():
         self._bits=BitsWriter()
         self._done=False
         self._started=False
-    def get_message(self):
+    def get_message(self, force=False):
         """ returns hidden message, after processing all text"""
+        if not self._done and not force:
+            raise ErrorIncompleteMessage('Message is not complete')
         return self._bits.get_value()
     def unhide(self,text):
         """process text with hidden info"""
@@ -91,12 +95,16 @@ class _TextStatus(object):
             return False
         if is_word_char(self._prev_char) and   is_word_char(self._curr_char):
             return True
+    def prev_char(self):
+        return self._prev_char
 
      
 class JoinersHidingStrategy(HidingStrategy):
     CHAR_ZERO=unicodedata.lookup('ZERO WIDTH NON-JOINER') 
     CHAR_ONE=unicodedata.lookup('ZERO WIDTH JOINER')     
     def __init__(self, secret_message, **kwargs):
+        self._space_between=kwargs.pop('fill_factor', 1)
+        self._next_hit=1
         super(JoinersHidingStrategy, self).__init__(secret_message)
         self._state=_TextStatus()
         
@@ -105,14 +113,37 @@ class JoinersHidingStrategy(HidingStrategy):
             raise StegoError('Carrier text contains Zero Width Joiners')
         self._state.update(ch)
         if self._state.can_insert():
-            b=self.read_next_bit()
-            if b is not None:
-                if b:
-                    bit_char=self.CHAR_ONE
+            if not self._started:
+                res.append(self.CHAR_ZERO)
+                res.append(self.CHAR_ONE)
+                self._started=True
+                self._calc_next_hit()
+            elif self._next_hit<=1:
+                b=self.read_next_bit()
+                if b is not None:
+                    if b:
+                        bit_char=self.CHAR_ONE
+                    else:
+                        bit_char=self.CHAR_ZERO
+                    res.append(bit_char)
                 else:
-                    bit_char=self.CHAR_ZERO
-                res.append(bit_char)
+                    res.append(self.CHAR_ONE)
+                    res.append(self.CHAR_ZERO)
+                    self._done=True
+                self._calc_next_hit()
+            else:
+                self._next_hit-=1
         res.append(ch)
+        
+    def _calc_next_hit(self):
+        if  isinstance(self._space_between, int):
+            self._next_hit=self._space_between
+        elif isinstance(self._space_between, (tuple,list)) and len(self._space_between)==2:
+            self._next_hit=random.randint(self._space_between[0], self._space_between[1])
+        else:
+            raise ValueError('Fill factor must be either integer ot tuple of two integers')
+            
+        
             
         
         
@@ -128,19 +159,33 @@ class JoinersHidingStrategy(HidingStrategy):
                 
         
 class JoinersUnhidingStrategy(UnhidingStrategy):
+    def __init__(self, **kwargs):
+        super(JoinersUnhidingStrategy, self).__init__( **kwargs)
+        self._state=_TextStatus()
+        self._deferred_bit=False
     
     def unhide(self, text):
-        found_hidden=False
+        if self._done:
+            return
         for ch in text:
-            bit=None
-            if ch==JoinersHidingStrategy.CHAR_ZERO:
-                self._bits.write_bit(0)
-                found_hidden=True
-            elif ch==JoinersHidingStrategy.CHAR_ONE:
-                self._bits.write_bit(1)
-                found_hidden=True
+            self._state.update(ch)
+            if self._started:
+                if ch==JoinersHidingStrategy.CHAR_ZERO:
+                    if self._state.prev_char()==JoinersHidingStrategy.CHAR_ONE:
+                        self._done=True
+                        break
+                    self._bits.write_bit(0)
+                elif ch==JoinersHidingStrategy.CHAR_ONE:
+                    self._deferred_bit=True
+                elif self._deferred_bit:
+                    self._bits.write_bit(1)
+                    self._deferred_bit=False
+            else:
+                if ch==JoinersHidingStrategy.CHAR_ONE and \
+                self._state.prev_char()==JoinersHidingStrategy.CHAR_ZERO:
+                    self._started=True
                 
-        return found_hidden
+        
     
     @staticmethod
     def test_text(text):
@@ -172,13 +217,10 @@ class _TextStatusExt(object):
         self._history=[]
         
         
-class UnfinishedString(str):
-    def finish(self, ch):
+class UnfinishedString(six.text_type):
         pass
-    
         
            
-#TODO: does not work for html stream
 class AltSpaceHidingStrategy(HidingStrategy):    
     CHAR_SPACE=unicodedata.lookup('SPACE')
     CHAR_SPACE1=unicodedata.lookup('FOUR-PER-EM SPACE')  
@@ -200,20 +242,23 @@ class AltSpaceHidingStrategy(HidingStrategy):
             next_text.append(ch)
         self._delayed_char=None
         
-        
     def hide_one(self, res, ch, pos):
         self._state.update(ch)
         if self._state.can_insert():
-            b=self.read_next_bit()
-            if not b is None:
-                if b:
-                    self._resolve_delayed(pos, res, self.CHAR_SPACE)
-                else:
-                    self._resolve_delayed(pos, res, self.CHAR_SPACE1)
-            else:
+            if not self._started:
                 self._resolve_delayed(pos, res, self.CHAR_SPACE2)
-                self._state.reset()
-            
+                self._started=True
+            else:
+                b=self.read_next_bit()
+                if not b is None:
+                    if b:
+                        self._resolve_delayed(pos, res, self.CHAR_SPACE)
+                    else:
+                        self._resolve_delayed(pos, res, self.CHAR_SPACE1)
+                else:
+                    self._resolve_delayed(pos, res, self.CHAR_SPACE2)
+                    self._state.reset()
+                
         else:
             if self._delayed_char:
                 self._resolve_delayed(pos,res)
@@ -231,22 +276,9 @@ class AltSpaceHidingStrategy(HidingStrategy):
         else:
             self._unfinished=None
             return text
-                
-                
-    @property
-    def remaining_bits(self):
-        remains= super(AltSpaceHidingStrategy,self).remaining_bits
-        if not self._done:
-            return remains+1
-        else:
-            return remains
-        
         
     def flush(self):
         return self._delayed_char
-                
-    
-            
     
     @staticmethod
     def analyze_capacity(all_text):
@@ -256,7 +288,7 @@ class AltSpaceHidingStrategy(HidingStrategy):
             state.update(ch)
             if state.can_insert():
                 count+=1
-        return count-1
+        return count-2
     
     
 class AltSpaceUnhidingStrategy(UnhidingStrategy):
@@ -264,8 +296,6 @@ class AltSpaceUnhidingStrategy(UnhidingStrategy):
     def __init__(self, **kwargs):
         UnhidingStrategy.__init__(self, **kwargs)
         self._state=_TextStatusExt()
-        
-        
         
     def unhide(self, text):
         if self._done:
@@ -276,34 +306,29 @@ class AltSpaceUnhidingStrategy(UnhidingStrategy):
                 if self._done:
                     break
                 prev=self._state.get_prev_char()
-                if prev==AltSpaceHidingStrategy.CHAR_SPACE:
+                if self._started and prev==AltSpaceHidingStrategy.CHAR_SPACE:
                     self._bits.write_bit(1) 
-                elif prev==AltSpaceHidingStrategy.CHAR_SPACE1:
+                elif self._started and prev==AltSpaceHidingStrategy.CHAR_SPACE1:
                     self._bits.write_bit(0)
                 elif prev==AltSpaceHidingStrategy.CHAR_SPACE2:
-                    self._done=True
+                    if not self._started:
+                        self._started=True
+                    else:
+                        self._done=True
                     
-                    
-    def get_message(self, force=False):
-        if not self._done and not force:
-            raise ErrorIncompleteMessage('Message is not complete')
-        return super(AltSpaceUnhidingStrategy, self).get_message()
-    
     @staticmethod
     def test_text(all_text):
         iterator=iter(all_text)
-        found_space=False
+        found_space=0
         try:
             while True:
                 ch=next(iterator) 
-                if ch==AltSpaceHidingStrategy.CHAR_SPACE1:
-                    found_space=True
-                    break
-            if found_space:    
-                while True:
-                    ch=next(iterator) 
-                    if ch==AltSpaceHidingStrategy.CHAR_SPACE2:
-                        return True
+                if found_space==1 and ch==AltSpaceHidingStrategy.CHAR_SPACE1:
+                    found_space=2
+                elif found_space==2 and ch==AltSpaceHidingStrategy.CHAR_SPACE2:
+                    return True
+                elif found_space==0 and ch==AltSpaceHidingStrategy.CHAR_SPACE2:
+                    found_space=1
         except StopIteration:
             pass
             

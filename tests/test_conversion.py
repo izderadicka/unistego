@@ -67,7 +67,7 @@ if os.access('/usr/bin/ebook-convert', os.EX_OK):
             tmp_dir=tempfile.mkdtemp(prefix='unistego_test_')
             in_file_name=os.path.join(tmp_dir,os.path.split(html_file2)[-1])
             with open(html_file2,'rt') as f:
-                hider=get_hider_html(open(in_file_name, 'wt'), secret, preset )
+                hider=get_hider_html(open(in_file_name, 'wt'), secret, preset, start_at = 20000)
                 with  hider:
                     for l in f:
                         hider.write(l)

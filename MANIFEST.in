@@ -1,0 +1,3 @@
+recursive-include tests *.txt *.py *.html
+exclude tests/gprof2dot.py
+include README.md

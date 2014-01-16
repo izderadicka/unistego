@@ -20,7 +20,7 @@ class TestJoinerStrategy(unittest.TestCase):
         hider=strategy.JoinersHidingStrategy(secret)
         text2=hider.hide(text)
         six.print_(text2)
-        self.assertTrue(len(text2)==len(text)+len(secret)*8)
+        self.assertTrue(len(text2)==len(text)+len(secret)*8+4)
         
         
     def test_capacity(self):

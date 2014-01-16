@@ -8,7 +8,7 @@ import os
 import io
 from unistego import html_parser
 import six
-from unistego.stream import get_hider_html, get_unhider_html
+from unistego import get_hider_html, get_unhider_html
 
 from .test_streams import secret
 html_file= os.path.join(os.path.split(__file__)[0], 'html1.html')
