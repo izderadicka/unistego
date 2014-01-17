@@ -6,7 +6,7 @@ Created on Jan 8, 2014
 
 from six.moves import html_parser as parser  # @UnresolvedImport
 from six.moves import html_entities as entities  # @UnresolvedImport
-from six.moves.html_parser import endendtag, endtagfind, tagfind_tolerant  # @UnresolvedImport
+
 #from html import parser
 #from html import entities
 #from html.parser import  endendtag, endtagfind, tagfind_tolerant
@@ -52,12 +52,12 @@ class Parser (parser.HTMLParser):
     def parse_endtag(self, i):
         rawdata = self.rawdata
         assert rawdata[i:i+2] == "</", "unexpected call to parse_endtag"
-        match = endendtag.search(rawdata, i+1) # >
+        match = parser.endendtag.search(rawdata, i+1) # >
         if not match:
             return -1
         gtpos = match.end()
         
-        match = endtagfind.match(rawdata, i) # </ + tag + >
+        match = parser.endtagfind.match(rawdata, i) # </ + tag + >
         if not match:
             if self.cdata_elem is not None:
                 self.handle_data(rawdata[i:gtpos])
@@ -65,7 +65,7 @@ class Parser (parser.HTMLParser):
             if self.strict:
                 self.error("bad end tag: %r" % (rawdata[i:gtpos],))
             # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
-            namematch = tagfind_tolerant.match(rawdata, i+2)
+            namematch = parser.tagfind_tolerant.match(rawdata, i+2)
             if not namematch:
                 # w3.org/TR/html5/tokenization.html#end-tag-open-state
                 if rawdata[i:i+3] == '</>':

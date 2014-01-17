@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
                 
     def call_proc(self,  params):
         tmp_dir=tempfile.gettempdir()
-        p=subprocess.Popen([os.path.join(root_dir,'../bin/python'), os.path.join(root_dir, 'unistego-tool'),]+params,
+        p=subprocess.Popen([os.path.join(root_dir,'bin/python'), os.path.join(root_dir, 'unistego-tool'),]+params,
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err=p.communicate()
         if err:
