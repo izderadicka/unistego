@@ -59,7 +59,7 @@ class HidingStream(io.TextIOBase):
         self._position=0
         if compress_class:
             compressor=compress_class(**kwargs)
-            if isinstance(secret, six.string_types):
+            if isinstance(secret, six.text_type):
                 secret=secret.encode('utf-8')
             secret=compressor.compress(secret)
             
@@ -92,6 +92,8 @@ class HidingStream(io.TextIOBase):
         return hidden
     
     def write(self, s):
+        if not isinstance(s, six.text_type):
+            raise ValueError('Unicode only, please')
         self._hide(s)
         
         
@@ -101,7 +103,7 @@ class HidingStream(io.TextIOBase):
     
     def close(self, force=False):
         if self._hider.remaining_bits>0 and not force:
-            raise ErrorNotFinished('Secret message has not been hidden - %d bits remains')
+            raise ErrorNotFinished('Secret message has not been hidden - %d bits remains' % (self._hider.remaining_bits, ))
         remaining=self._hider.flush()
         if remaining:
             self._out.write(remaining)
@@ -141,6 +143,8 @@ class HtmlHidingStream(HidingStream):
         self._position+= len(data)
         
     def write(self,s):
+        if not isinstance(s, six.text_type):
+            raise ValueError('Unicode only, please')
         self._parser.feed(s)
         
     def close(self, force=False):
@@ -169,12 +173,16 @@ class UnhidingStream(io.TextIOBase):
     def read(self, n=-1):
         txt=self._in.read(n)
         if txt:
+            if not isinstance(txt, six.text_type):
+                raise ValueError('Unicode only, please')
             self._unhide(txt)
         return txt
     
     def readline(self, limit=-1):
         txt=self._in.readline(limit)
         if txt:
+            if not isinstance(txt, six.text_type):
+                raise ValueError('Unicode only, please')
             self._unhide(txt)
         return txt
     
@@ -209,12 +217,16 @@ class HtmlUnhidingStream(UnhidingStream):
     def read(self, n=-1):
         txt=self._in.read(n)
         if txt:
+            if not isinstance(txt, six.text_type):
+                raise ValueError('Unicode only, please')
             self._parser.feed(txt)
         return txt
     
     def readline(self, limit=-1):
         txt=self._in.readline(limit)
         if txt:
+            if not isinstance(txt, six.text_type):
+                raise ValueError('Unicode only, please')
             self._parser.feed(txt)
         return txt
     

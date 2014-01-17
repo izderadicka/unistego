@@ -13,7 +13,7 @@ from unistego import get_hider_html, get_unhider_html
 from .test_streams import secret
 html_file= os.path.join(os.path.split(__file__)[0], 'html1.html')
 html_file2= os.path.join(os.path.split(__file__)[0], 'html2.html')
-simple_html="""<!DOCTYPE html>
+simple_html=six.u("""<!DOCTYPE html>
 <html>
 <head>
 <title>Test Page</title>
@@ -23,7 +23,7 @@ simple_html="""<!DOCTYPE html>
 <p>My first paragraph.</p>
 </body>
 </html>
-"""
+""")
 class Test(unittest.TestCase):
 
 
@@ -40,7 +40,7 @@ class Test(unittest.TestCase):
             
         parser=html_parser.Parser(write_text, write_markup)
         
-        for l in simple_html.splitlines(keepends=True):
+        for l in simple_html.splitlines(True):
             parser.feed(l)
         new_html=out.getvalue()
         #six.print_(new_html)
@@ -61,7 +61,7 @@ class Test(unittest.TestCase):
             text.write(data)
             
         parser=html_parser.Parser(write_text, write_markup)
-        with open(html_file, 'rt') as f:
+        with io.open(html_file, 'rt') as f:
             for l in f:
                 parser.feed(l)
                 
@@ -74,11 +74,11 @@ class Test(unittest.TestCase):
     def test_hide(self, preset='joiners'):
         mstream=io.StringIO()
         hider=get_hider_html(mstream, secret, preset)
-        with open(html_file2, 'rt') as f:
+        with io.open(html_file2, 'rt') as f:
             for l in f:
                 hider.write(l)
                 
-        with open('/tmp/test.html', 'wt') as out:
+        with io.open('/tmp/test.html', 'wt') as out:
             out.write(mstream.getvalue())
             
         mstream=io.StringIO(mstream.getvalue())

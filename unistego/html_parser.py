@@ -4,19 +4,22 @@ Created on Jan 8, 2014
 @author: ivan
 '''
 
-#from six.moves import html_parser as parser  # @UnresolvedImport
-from html import parser
-
-from html import entities
-from html.parser import  endendtag, endtagfind, tagfind_tolerant
+from six.moves import html_parser as parser  # @UnresolvedImport
+from six.moves import html_entities as entities  # @UnresolvedImport
+from six.moves.html_parser import endendtag, endtagfind, tagfind_tolerant  # @UnresolvedImport
+#from html import parser
+#from html import entities
+#from html.parser import  endendtag, endtagfind, tagfind_tolerant
 from six import unichr
+import copy
 import logging
+import six
 log=logging.getLogger('unistego.html')
 
 
 class Parser (parser.HTMLParser):
     def __init__(self,on_text_cb, on_markup_cb, fragment=False):
-        super(Parser, self).__init__()
+        parser.HTMLParser.__init__(self)
         self._on_text=on_text_cb
         self._on_markup=on_markup_cb
         self._tagstack=[]
@@ -37,6 +40,8 @@ class Parser (parser.HTMLParser):
             self._on_markup(data)
         
     def handle_data(self, data):
+        if not isinstance(data, six.text_type):
+            data=data.decode('utf-8')
         self._text_out(data)
         
     def handle_starttag(self, tag, attrs, ends=False):
@@ -92,7 +97,7 @@ class Parser (parser.HTMLParser):
         
     def handle_endtag(self, tag):
         self._on_markup(self.get_endtag_text())  
-        new_stack=self._tagstack.copy()
+        new_stack=copy.copy(self._tagstack)
         try:   
             while True:
                 start_tag=new_stack.pop()

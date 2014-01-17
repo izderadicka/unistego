@@ -12,7 +12,7 @@ import random
 import six
 
 
-class HidingStrategy():
+class HidingStrategy(object):
     def __init__(self, secrect_message, **kwargs):
         self._msg=secrect_message
         self._bits=BitsReader(secrect_message)
@@ -62,7 +62,7 @@ class HidingStrategy():
         """Return maximum estimated number of bits that can be hidden in given text"""
         raise NotImplemented
 
-class UnhidingStrategy():
+class UnhidingStrategy(object):
     def __init__(self, **kwargs):
         self._bits=BitsWriter()
         self._done=False
@@ -282,6 +282,8 @@ class AltSpaceHidingStrategy(HidingStrategy):
     
     @staticmethod
     def analyze_capacity(all_text):
+        if not isinstance(all_text , six.text_type):
+            raise ValueError('Input must be unicode text')
         count=0
         state=_TextStatusExt()
         for ch in all_text:

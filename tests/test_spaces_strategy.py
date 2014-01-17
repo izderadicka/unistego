@@ -14,10 +14,10 @@ class TestSpacesStrategy(unittest.TestCase):
 
 
     def test_capacity(self):
-        with open(test_file,'rt') as f:
+        with io.open(test_file,'rt') as f:
             text=f.read()
         capacity=AltSpaceHidingStrategy.analyze_capacity(text)
-        rel_capacity=capacity/len(text)
+        rel_capacity=float(capacity)/len(text)
         six.print_('Relative capacity: ', rel_capacity)
         self.assertTrue(rel_capacity>0.1)
         

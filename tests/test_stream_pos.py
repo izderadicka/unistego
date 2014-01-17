@@ -34,11 +34,11 @@ class TestStreamPos(unittest.TestCase):
     def test_html(self, preset='joiners', hiding_pos=444000, unhiding_pos=0, **kwargs):
         mstream=io.StringIO()
         hider=get_hider_html(mstream, secret, preset, start_at=hiding_pos, **kwargs)
-        with open(html_file2, 'rt') as f:
+        with io.open(html_file2, 'rt') as f:
             for l in f:
                 hider.write(l)
                 
-        with open('/tmp/test.html', 'wt') as out:
+        with io.open('/tmp/test.html', 'wt') as out:
             out.write(mstream.getvalue())
             
         mstream=io.StringIO(mstream.getvalue())

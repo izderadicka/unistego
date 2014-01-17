@@ -6,6 +6,7 @@ Created on Jan 4, 2014
 '''
 import unittest
 from unistego.bits import BitsReader, BitsWriter
+import six
 
 class TestBits(unittest.TestCase):
 
@@ -42,7 +43,7 @@ class TestBits(unittest.TestCase):
         
         
     def test_both(self):
-        text='Sedm lumpů šlohlo pumpu'
+        text=six.u('Sedm lumpů šlohlo pumpu')
         r=BitsReader(text)
         w=BitsWriter()
         for b in r:

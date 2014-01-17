@@ -12,6 +12,7 @@ import tempfile
 from unistego.stream import get_hider, get_unhider, get_hider_html
 from tests.test_streams import secret
 from tests.test_html import html_file2
+import io
 
 test_file=os.path.join(os.path.split(__file__)[0], 'text.txt')
 if os.access('/usr/bin/ebook-convert', os.EX_OK):
@@ -39,8 +40,8 @@ if os.access('/usr/bin/ebook-convert', os.EX_OK):
         def test_conversion(self, preset='joiners'):
             tmp_dir=tempfile.mkdtemp(prefix='unistego_test_')
             in_file_name=os.path.join(tmp_dir,os.path.split(test_file)[-1])
-            with open(test_file,'rt') as f:
-                hider=get_hider(open(in_file_name, 'wt'), secret, preset )
+            with io.open(test_file,'rt', encoding='utf-8') as f:
+                hider=get_hider(io.open(in_file_name, 'wt'), secret, preset )
                 with  hider:
                     for l in f:
                         hider.write(l)
@@ -53,7 +54,7 @@ if os.access('/usr/bin/ebook-convert', os.EX_OK):
                 c.convert(out_file_name)
                 in_file_name=out_file_name
                 
-            with get_unhider(open(in_file_name, 'rt'), preset) as unhider:
+            with get_unhider(io.open(in_file_name, 'rt'), preset) as unhider:
                 
                 while True:
                     t=unhider.read(1000)
@@ -66,8 +67,8 @@ if os.access('/usr/bin/ebook-convert', os.EX_OK):
         def test_conversion_html(self,preset='joiners'):
             tmp_dir=tempfile.mkdtemp(prefix='unistego_test_')
             in_file_name=os.path.join(tmp_dir,os.path.split(html_file2)[-1])
-            with open(html_file2,'rt') as f:
-                hider=get_hider_html(open(in_file_name, 'wt'), secret, preset, start_at = 20000)
+            with io.open(html_file2,'rt') as f:
+                hider=get_hider_html(io.open(in_file_name, 'wt'), secret, preset, start_at = 20000)
                 with  hider:
                     for l in f:
                         hider.write(l)
@@ -80,7 +81,7 @@ if os.access('/usr/bin/ebook-convert', os.EX_OK):
                 c.convert(out_file_name)
                 in_file_name=out_file_name
                 
-            with get_unhider(open(in_file_name, 'rt'), preset) as unhider:
+            with get_unhider(io.open(in_file_name, 'rt'), preset) as unhider:
                 
                 while True:
                     t=unhider.read(1000)

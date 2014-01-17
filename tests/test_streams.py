@@ -1,3 +1,4 @@
+# encoding=utf-8
 '''
 Created on Jan 5, 2014
 
@@ -16,11 +17,11 @@ import zlib
 
 test_file=os.path.join(os.path.split(__file__)[0], 'text.txt')
 
-secret="""The io module provides Python’s main facilities for dealing with various 
+secret=six.u("""The io module provides Python’s main facilities for dealing with various 
 types of I/O. There are three main types of I/O: text I/O, binary I/O and raw I/O. 
 These are generic categories, and various backing stores can be used for each of them. 
 A concrete object belonging to any of these categories is called a file object. Other common terms are 
-stream and file-like object."""
+stream and file-like object.""")
 
 class TestStreams(unittest.TestCase):
     

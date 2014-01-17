@@ -27,7 +27,7 @@ class TestJoinerStrategy(unittest.TestCase):
         text=io.open(test_file, mode='rt', encoding='utf-8').read()
         size=len(text)
         capacity=JoinersHidingStrategy.analyze_capacity(text)
-        six.print_('Relative capacity:', capacity/size)
+        six.print_('Relative capacity:', float(capacity)/size)
         self.assertTrue(capacity> size/2 and capacity<size)
         
     def test_both(self):

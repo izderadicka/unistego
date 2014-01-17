@@ -19,7 +19,7 @@ class BitsContainer(object):
 class BitsReader(BitsContainer):
     def __init__(self, data, encoding='utf-8'):
         super(BitsReader,self).__init__()
-        if isinstance(data, six.string_types):
+        if not isinstance(data, six.binary_type):
             data=data.encode(encoding)
         self._bits.frombytes(data)
         
@@ -34,6 +34,7 @@ class BitsReader(BitsContainer):
         bit=self._bits[self._index]
         self._index+=1
         return bit
+    next=__next__
         
     def __iter__(self):
         return self
