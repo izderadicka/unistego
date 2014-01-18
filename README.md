@@ -26,7 +26,7 @@ import unistego
 unhider=unistego.get_uhider(open('text-with-hidden-msg.txt', 'rt'), 'joiners')
 with unhider:
 	unhider.read()
-print(unhider.get_message().decode('utf-8')
+print(unhider.get_message().decode('utf-8'))
 ```
 
 Unistego also supports html (where html is parsed and message in hidden in text not in markup) - 
