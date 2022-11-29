@@ -23,7 +23,7 @@ with carrier_text, hider:
 to read hidden message:
 ```python
 import unistego
-unhider=unistego.get_uhider(open('text-with-hidden-msg.txt', 'rt'), 'joiners')
+unhider=unistego.get_unhider(open('text-with-hidden-msg.txt', 'rt'), 'joiners')
 with unhider:
 	unhider.read()
 print(unhider.get_message().decode('utf-8'))
